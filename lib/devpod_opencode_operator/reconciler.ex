@@ -6,6 +6,7 @@ defmodule DevpodOpencodeOperator.Reconciler do
   """
 
   alias DevpodOpencodeOperator.Config
+  alias DevpodOpencodeOperator.K8s.Cluster
   alias DevpodOpencodeOperator.Resources
 
   require Logger
@@ -15,8 +16,8 @@ defmodule DevpodOpencodeOperator.Reconciler do
 
   @type result :: :ok | {:skipped, term()} | {:error, term()}
 
-  @spec reconcile(map(), Config.t(), module()) :: result()
-  def reconcile(pod, %Config{} = config, k8s_client) do
+  @spec reconcile(K8s.Conn.t(), map(), Config.t()) :: result()
+  def reconcile(conn, pod, %Config{} = config) do
     workspace_id = get_in(pod, ["metadata", "labels", @workspace_uid_label])
 
     case workspace_id do
@@ -25,19 +26,21 @@ defmodule DevpodOpencodeOperator.Reconciler do
         {:skipped, :missing_workspace_uid_label}
 
       workspace_id ->
-        reconcile_with_workspace(pod, config, k8s_client, workspace_id)
+        reconcile_with_workspace(conn, pod, config, workspace_id)
     end
   end
 
-  defp reconcile_with_workspace(pod, config, k8s_client, workspace_id) do
+  defp reconcile_with_workspace(conn, pod, config, workspace_id) do
     namespace = get_in(pod, ["metadata", "namespace"])
     resource_name = "#{workspace_id}-opencode"
 
     # Read existing Service to distinguish CREATE from UPDATE.
     # A get error is non-fatal — we treat it as CREATE and apply anyway
     # (the apply is server-side, idempotent).
-    existing_service = k8s_client.get(:Service, resource_name, namespace: namespace)
-    operation = operation_from(existing_service)
+    operation =
+      conn
+      |> Cluster.get(:Service, resource_name, namespace: namespace)
+      |> operation_from()
 
     # Build manifests (pure, no side effects)
     target_port = resolve_port(pod, config)
@@ -51,8 +54,8 @@ defmodule DevpodOpencodeOperator.Reconciler do
         config.gateway_namespace
       )
 
-    with {:ok, _service} <- k8s_client.apply(:Service, resource_name, service),
-         {:ok, _route} <- k8s_client.apply(:HTTPRoute, resource_name, http_route) do
+    with {:ok, _service} <- Cluster.apply(conn, :Service, resource_name, service),
+         {:ok, _route} <- Cluster.apply(conn, :HTTPRoute, resource_name, http_route) do
       Logger.info("Reconciled workspace: #{String.upcase(to_string(operation))}",
         workspace_id: workspace_id
       )
