@@ -1,11 +1,11 @@
-defmodule DevpodOpencodeOperator.K8s.Cluster do
+defmodule DevpodOpencodeOperator.K8s do
   @moduledoc """
   Application-boundary behaviour for talking to a Kubernetes cluster.
 
   This module defines the contract for all Kubernetes operations used by the
   application. Production wires the `:k8s_cluster` application env key to
-  `DevpodOpencodeOperator.K8s.Cluster.Live` (which wraps the `k8s` hex
-  package); tests wire it to a Mox-generated mock.
+  `DevpodOpencodeOperator.K8s.Production` (the default); tests wire it to a
+  Mox-generated mock.
 
   The `list_pods` → `watch_pods` two-phase pattern is the standard
   Kubernetes controller pattern: list to take a snapshot and obtain a
@@ -43,7 +43,8 @@ defmodule DevpodOpencodeOperator.K8s.Cluster do
   # Facade — dispatches to the impl module configured in application env
   # -------------------------------------------------------------------
 
-  defp impl, do: Application.get_env(:devpod_opencode_operator, :k8s_cluster, __MODULE__.Live)
+  defp impl,
+    do: Application.get_env(:devpod_opencode_operator, :k8s_cluster, __MODULE__.Production)
 
   @spec apply(K8s.Conn.t(), atom, String.t(), map) :: {:ok, map} | {:error, term}
   def apply(conn, kind, name, manifest), do: impl().apply(conn, kind, name, manifest)

@@ -6,7 +6,7 @@ defmodule DevpodOpencodeOperator.Reconciler do
   """
 
   alias DevpodOpencodeOperator.Config
-  alias DevpodOpencodeOperator.K8s.Cluster
+  alias DevpodOpencodeOperator.K8s, as: Cluster
   alias DevpodOpencodeOperator.Resources
 
   require Logger

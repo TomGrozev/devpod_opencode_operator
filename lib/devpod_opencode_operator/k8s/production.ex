@@ -1,13 +1,13 @@
-defmodule DevpodOpencodeOperator.K8s.Cluster.Live do
+defmodule DevpodOpencodeOperator.K8s.Production do
   @moduledoc """
-  Production Kubernetes cluster client implementing `DevpodOpencodeOperator.K8s.Cluster`.
+  Production Kubernetes cluster client implementing `DevpodOpencodeOperator.K8s`.
 
   Wraps the `k8s` hex package to perform real Kubernetes API operations.
   This module does NOT create the connection — the caller passes a
   `K8s.Conn.t()` constructed elsewhere (typically in the Application module).
   """
 
-  @behaviour DevpodOpencodeOperator.K8s.Cluster
+  @behaviour DevpodOpencodeOperator.K8s
 
   require Logger
 

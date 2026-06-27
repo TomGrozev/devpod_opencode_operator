@@ -20,7 +20,7 @@ defmodule DevpodOpencodeOperator.Watcher do
 
   require Logger
 
-  alias DevpodOpencodeOperator.K8s.Cluster
+  alias DevpodOpencodeOperator.K8s, as: Cluster
   alias DevpodOpencodeOperator.Reconciler
 
   @default_backoff 1_000
