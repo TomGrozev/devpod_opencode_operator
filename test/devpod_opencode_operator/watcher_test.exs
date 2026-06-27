@@ -6,6 +6,16 @@ defmodule DevpodOpencodeOperator.WatcherTest do
   alias DevpodOpencodeOperator.Config
   alias DevpodOpencodeOperator.Watcher
 
+  @config %Config{
+    target_namespace: "devpod",
+    base_domain: "example.com",
+    default_port: 4096,
+    gateway_name: "my-gateway",
+    gateway_namespace: "gateway-ns"
+  }
+
+  @test_conn %K8s.Conn{url: "https://test-cluster.example.com"}
+
   setup :verify_on_exit!
 
   setup do
@@ -16,18 +26,23 @@ defmodule DevpodOpencodeOperator.WatcherTest do
     )
 
     Mox.set_mox_global()
+
+    {:ok, _} = DevpodOpencodeOperator.K8s.Connection.start_link(conn: @test_conn)
+
+    on_exit(fn ->
+      try do
+        if Process.whereis(DevpodOpencodeOperator.K8s.Connection) do
+          GenServer.stop(DevpodOpencodeOperator.K8s.Connection)
+        end
+      rescue
+        _ -> :ok
+      catch
+        :exit, _ -> :ok
+      end
+    end)
+
     :ok
   end
-
-  @config %Config{
-    target_namespace: "devpod",
-    base_domain: "example.com",
-    default_port: 4096,
-    gateway_name: "my-gateway",
-    gateway_namespace: "gateway-ns"
-  }
-
-  @test_conn %K8s.Conn{url: "https://test-cluster.example.com"}
 
   # ---------------------------------------------------------------------------
   # Helper to build a pod map (string keys, K8s API shape)
@@ -81,7 +96,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
       {:ok, _pid} =
         Watcher.start_link(
           config: @config,
-          conn: @test_conn,
           backoff: 50
         )
 
@@ -106,7 +120,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 
@@ -134,7 +147,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
       {:ok, _pid} =
         Watcher.start_link(
           config: @config,
-          conn: @test_conn,
           backoff: 50
         )
 
@@ -167,7 +179,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 
@@ -198,7 +209,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 
@@ -229,7 +239,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 
@@ -268,7 +277,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
       {:ok, _pid} =
         Watcher.start_link(
           config: @config,
-          conn: @test_conn,
           backoff: 50
         )
 
@@ -297,7 +305,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 
@@ -318,7 +325,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 
@@ -355,7 +361,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           {:ok, _pid} =
             Watcher.start_link(
               config: @config,
-              conn: @test_conn,
               backoff: 50
             )
 

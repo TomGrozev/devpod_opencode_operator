@@ -8,9 +8,13 @@ defmodule DevpodOpencodeOperator.Watcher do
   stream ends (server-side timeout, 410 Gone, network error, etc.) the
   watcher retries with exponential backoff, capped at 30 seconds.
 
+  The Kubernetes connection is fetched on demand from
+  `DevpodOpencodeOperator.K8s.Connection` rather than stored in state,
+  so credential rotation or connection failures are handled by restarting
+  the supervised Connection process.
+
   ## State
 
-  * `conn` — a `K8s.Conn.t()` used to talk to the Kubernetes API
   * `config` — a `%DevpodOpencodeOperator.Config{}` struct
   * `resource_version` — last-seen `resourceVersion` for resuming a watch
   * `backoff` — current backoff interval in milliseconds
@@ -35,18 +39,15 @@ defmodule DevpodOpencodeOperator.Watcher do
 
   ## Options
 
-    * `:conn` — (required) a `K8s.Conn.t()`
     * `:config` — (required) a `%DevpodOpencodeOperator.Config{}`
     * `:backoff` — initial backoff in ms (default: #{@default_backoff})
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    conn = Keyword.fetch!(opts, :conn)
     config = Keyword.fetch!(opts, :config)
     backoff = Keyword.get(opts, :backoff, @default_backoff)
 
     GenServer.start_link(__MODULE__, %{
-      conn: conn,
       config: config,
       resource_version: nil,
       backoff: backoff
@@ -66,7 +67,9 @@ defmodule DevpodOpencodeOperator.Watcher do
   end
 
   @impl true
-  def handle_info(:list_pods, %{config: config, conn: conn} = state) do
+  def handle_info(:list_pods, %{config: config} = state) do
+    conn = DevpodOpencodeOperator.K8s.Connection.get()
+
     case Cluster.list_pods(conn, namespace: config.target_namespace) do
       {:ok, %{items: items, resource_version: resource_version}} ->
         Logger.info("Listed #{length(items)} pods, resourceVersion=#{inspect(resource_version)}")
@@ -87,7 +90,9 @@ defmodule DevpodOpencodeOperator.Watcher do
   end
 
   @impl true
-  def handle_info(:watch, %{config: config, conn: conn} = state) do
+  def handle_info(:watch, %{config: config} = state) do
+    conn = DevpodOpencodeOperator.K8s.Connection.get()
+
     case Cluster.watch_pods(conn, state.resource_version, namespace: config.target_namespace) do
       {:ok, stream} ->
         Logger.info("Watch stream opened from resourceVersion=#{inspect(state.resource_version)}")
@@ -119,9 +124,11 @@ defmodule DevpodOpencodeOperator.Watcher do
   # ---------------------------------------------------------------------------
 
   defp consume_watch_stream(stream, state) do
+    conn = DevpodOpencodeOperator.K8s.Connection.get()
+
     final_state =
       Enum.reduce(stream, state, fn event, acc ->
-        handle_watch_event(event, acc.config, acc.conn)
+        handle_watch_event(event, acc.config, conn)
         %{acc | resource_version: next_resource_version(event, acc.resource_version)}
       end)
 
