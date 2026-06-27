@@ -56,10 +56,6 @@ defmodule DevpodOpencodeOperator.WatcherTest do
   # ---------------------------------------------------------------------------
 
   defp stub_reconcile_success do
-    stub(DevpodOpencodeOperator.MockK8sCluster, :get, fn _conn, :Service, _name, _opts ->
-      {:ok, nil}
-    end)
-
     stub(DevpodOpencodeOperator.MockK8sCluster, :apply, fn _conn, _kind, _name, manifest ->
       {:ok, manifest}
     end)
@@ -117,7 +113,7 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           Process.sleep(100)
         end)
 
-      assert log =~ "Reconciled workspace: CREATE"
+      assert log =~ "Reconciled workspace"
     end
 
     test "uses list resourceVersion for watch_pods call" do
@@ -178,7 +174,7 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           Process.sleep(100)
         end)
 
-      assert log =~ "Reconciled workspace: CREATE"
+      assert log =~ "Reconciled workspace"
     end
 
     test "MODIFIED event reconciles the pod" do
@@ -209,7 +205,7 @@ defmodule DevpodOpencodeOperator.WatcherTest do
           Process.sleep(100)
         end)
 
-      assert log =~ "Reconciled workspace: CREATE"
+      assert log =~ "Reconciled workspace"
     end
 
     test "DELETED event does NOT call reconcile" do

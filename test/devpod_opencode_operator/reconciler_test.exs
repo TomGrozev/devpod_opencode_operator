@@ -56,14 +56,10 @@ defmodule DevpodOpencodeOperator.ReconcilerTest do
   # ===========================================================================
 
   describe "reconcile/3 — happy path" do
-    test "applies Service and HTTPRoute for a valid pod, returns :ok and logs CREATE" do
+    test "applies Service and HTTPRoute for a valid pod, returns :ok and logs Reconciled workspace" do
       pod = build_pod(workspace_id: "abc123", namespace: "devpod")
 
       DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, name, _opts ->
-        assert name == "abc123-opencode"
-        {:ok, nil}
-      end)
       |> expect(:apply, fn _conn, :Service, name, manifest ->
         assert name == "abc123-opencode"
         assert manifest["kind"] == "Service"
@@ -88,7 +84,7 @@ defmodule DevpodOpencodeOperator.ReconcilerTest do
           assert :ok = Reconciler.reconcile(@test_conn, pod, @config)
         end)
 
-      assert log =~ "Reconciled workspace: CREATE"
+      assert log =~ "Reconciled workspace"
     end
   end
 
@@ -109,68 +105,11 @@ defmodule DevpodOpencodeOperator.ReconcilerTest do
     end
   end
 
-  describe "reconcile/3 — CREATE vs UPDATE" do
-    test "logs UPDATE when existing Service has a resourceVersion" do
-      pod = build_pod(workspace_id: "abc123", namespace: "devpod")
-
-      DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts ->
-        {:ok, %{"metadata" => %{"resourceVersion" => "12345"}}}
-      end)
-      |> expect(:apply, fn _conn, :Service, _name, manifest -> {:ok, manifest} end)
-      |> expect(:apply, fn _conn, :HTTPRoute, _name, manifest -> {:ok, manifest} end)
-
-      log =
-        capture_log(fn ->
-          assert :ok = Reconciler.reconcile(@test_conn, pod, @config)
-        end)
-
-      assert log =~ "Reconciled workspace: UPDATE"
-    end
-
-    test "logs CREATE when existing Service has nil resourceVersion" do
-      pod = build_pod(workspace_id: "abc123", namespace: "devpod")
-
-      DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts ->
-        {:ok, %{"metadata" => %{"resourceVersion" => nil}}}
-      end)
-      |> expect(:apply, fn _conn, :Service, _name, manifest -> {:ok, manifest} end)
-      |> expect(:apply, fn _conn, :HTTPRoute, _name, manifest -> {:ok, manifest} end)
-
-      log =
-        capture_log(fn ->
-          assert :ok = Reconciler.reconcile(@test_conn, pod, @config)
-        end)
-
-      assert log =~ "Reconciled workspace: CREATE"
-    end
-
-    test "logs CREATE when get returns error" do
-      pod = build_pod(workspace_id: "abc123", namespace: "devpod")
-
-      DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts ->
-        {:error, :not_found}
-      end)
-      |> expect(:apply, fn _conn, :Service, _name, manifest -> {:ok, manifest} end)
-      |> expect(:apply, fn _conn, :HTTPRoute, _name, manifest -> {:ok, manifest} end)
-
-      log =
-        capture_log(fn ->
-          assert :ok = Reconciler.reconcile(@test_conn, pod, @config)
-        end)
-
-      assert log =~ "Reconciled workspace: CREATE"
-    end
-  end
-
   describe "reconcile/3 — error path" do
     test "returns {:error, reason} when Service apply fails and does not apply HTTPRoute" do
       pod = build_pod(workspace_id: "abc123", namespace: "devpod")
 
       DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts -> {:ok, nil} end)
       |> expect(:apply, fn _conn, :Service, _name, _manifest -> {:error, :forbidden} end)
 
       # No HTTPRoute apply expectation — the with clause short-circuits
@@ -183,7 +122,6 @@ defmodule DevpodOpencodeOperator.ReconcilerTest do
       pod = build_pod(workspace_id: "abc123", namespace: "devpod")
 
       DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts -> {:ok, nil} end)
       |> expect(:apply, fn _conn, :Service, _name, manifest -> {:ok, manifest} end)
       |> expect(:apply, fn _conn, :HTTPRoute, _name, _manifest ->
         {:error, :route_forbidden}
@@ -199,7 +137,6 @@ defmodule DevpodOpencodeOperator.ReconcilerTest do
       pod = build_pod(workspace_id: "abc123", annotation_port: "8080")
 
       DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts -> {:ok, nil} end)
       |> expect(:apply, fn _conn, :Service, _name, manifest ->
         assert get_in(manifest, ["spec", "ports", Access.at(0), "targetPort"]) == 8080
         {:ok, manifest}
@@ -213,7 +150,6 @@ defmodule DevpodOpencodeOperator.ReconcilerTest do
       pod = build_pod(workspace_id: "abc123", annotation_port: nil)
 
       DevpodOpencodeOperator.MockK8sCluster
-      |> expect(:get, fn _conn, :Service, _name, _opts -> {:ok, nil} end)
       |> expect(:apply, fn _conn, :Service, _name, manifest ->
         assert get_in(manifest, ["spec", "ports", Access.at(0), "targetPort"]) == 4096
         {:ok, manifest}
