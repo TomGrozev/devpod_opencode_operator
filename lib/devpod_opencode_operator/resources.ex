@@ -1,18 +1,18 @@
 defmodule DevpodOpencodeOperator.Resources do
   @moduledoc """
-  Generates Kubernetes Service and HTTPRoute manifests from a Pod map.
+  Generates Kubernetes Service and HTTPRoute manifests from a Workspace struct.
   """
 
-  def build_service(pod, target_port) do
-    workspace_id = get_in(pod, ["metadata", "labels", "devpod.sh/workspace-uid"])
-    namespace = get_in(pod, ["metadata", "namespace"])
+  alias DevpodOpencodeOperator.Workspace
 
+  @spec build_service(Workspace.t()) :: map
+  def build_service(%Workspace{} = workspace) do
     metadata = %{
-      "name" => "#{workspace_id}-opencode",
-      "namespace" => namespace
+      "name" => workspace.name,
+      "namespace" => workspace.namespace
     }
 
-    metadata = maybe_add_owner_reference(metadata, pod)
+    metadata = maybe_add_owner_reference(metadata, workspace.owner_reference)
 
     %{
       "apiVersion" => "v1",
@@ -21,28 +21,26 @@ defmodule DevpodOpencodeOperator.Resources do
       "spec" => %{
         "type" => "ClusterIP",
         "selector" => %{
-          "devpod.sh/workspace-uid" => workspace_id
+          "devpod.sh/workspace-uid" => workspace.id
         },
         "ports" => [
           %{
             "port" => 80,
-            "targetPort" => target_port
+            "targetPort" => workspace.port
           }
         ]
       }
     }
   end
 
-  def build_http_route(pod, base_domain, gateway_name, gateway_namespace) do
-    workspace_id = get_in(pod, ["metadata", "labels", "devpod.sh/workspace-uid"])
-    namespace = get_in(pod, ["metadata", "namespace"])
-
+  @spec build_http_route(Workspace.t(), map) :: map
+  def build_http_route(%Workspace{} = workspace, config) do
     metadata = %{
-      "name" => "#{workspace_id}-opencode",
-      "namespace" => namespace
+      "name" => workspace.name,
+      "namespace" => workspace.namespace
     }
 
-    metadata = maybe_add_owner_reference(metadata, pod)
+    metadata = maybe_add_owner_reference(metadata, workspace.owner_reference)
 
     %{
       "apiVersion" => "gateway.networking.k8s.io/v1",
@@ -51,11 +49,11 @@ defmodule DevpodOpencodeOperator.Resources do
       "spec" => %{
         "parentRefs" => [
           %{
-            "name" => gateway_name,
-            "namespace" => gateway_namespace
+            "name" => config.gateway_name,
+            "namespace" => config.gateway_namespace
           }
         ],
-        "hostnames" => ["#{workspace_id}.#{base_domain}"],
+        "hostnames" => ["#{workspace.id}.#{config.base_domain}"],
         "rules" => [
           %{
             "matches" => [
@@ -68,7 +66,7 @@ defmodule DevpodOpencodeOperator.Resources do
             ],
             "backendRefs" => [
               %{
-                "name" => "#{workspace_id}-opencode",
+                "name" => workspace.name,
                 "port" => 80
               }
             ]
@@ -78,20 +76,9 @@ defmodule DevpodOpencodeOperator.Resources do
     }
   end
 
-  defp maybe_add_owner_reference(metadata, pod) do
-    case get_in(pod, ["metadata", "uid"]) do
-      nil ->
-        metadata
+  defp maybe_add_owner_reference(metadata, nil), do: metadata
 
-      uid ->
-        owner_ref = %{
-          "apiVersion" => "v1",
-          "kind" => "Pod",
-          "name" => get_in(pod, ["metadata", "name"]),
-          "uid" => uid
-        }
-
-        Map.put(metadata, "ownerReferences", [owner_ref])
-    end
+  defp maybe_add_owner_reference(metadata, owner_ref) do
+    Map.put(metadata, "ownerReferences", [owner_ref])
   end
 end

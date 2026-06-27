@@ -4,8 +4,12 @@ A Kubernetes operator that watches for devpod Pods and dynamically creates a Ser
 
 ## Language
 
+**Workspace**:
+The unit of reconciliation — one devpod Pod, identified by the `devpod.sh/workspace-uid` label, with a derived Kubernetes resource name (`<workspace_id>-opencode`), a resolved OpenCode port (from the `devpod.sh/opencode-port` annotation or the configured default), and an owner reference back to the source Pod. The operator's reconciliation creates a Service and an HTTPRoute per Workspace.
+_Avoid_: workspace resource, workspace pod, opencode workspace
+
 **Workspace ID**:
-The unique identifier for a devpod workspace, sourced from the `devpod.sh/workspace-uid` label on the Pod. Used in HTTPRoute hostnames and resource names.
+The unique identifier for a devpod workspace, sourced from the `devpod.sh/workspace-uid` label on the Pod. Used in HTTPRoute hostnames and resource names. See also: **Workspace**.
 _Avoid_: workspace UID, workspace-uid (these are the label key, not the concept)
 
 **OpenCode**:

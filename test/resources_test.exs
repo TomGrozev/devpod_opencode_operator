@@ -1,38 +1,52 @@
 defmodule DevpodOpencodeOperator.ResourcesTest do
   use ExUnit.Case
 
-  describe "build_service/2" do
+  alias DevpodOpencodeOperator.Config
+  alias DevpodOpencodeOperator.Workspace
+
+  @config %Config{
+    target_namespace: "devpod",
+    base_domain: "devpod.mydomain.com",
+    default_port: 4096,
+    gateway_name: "my-gateway",
+    gateway_namespace: "gateway-ns"
+  }
+
+  describe "build_service/1" do
     test "returns a Service with name <workspace_id>-opencode" do
-      pod = %{
-        "metadata" => %{
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
           "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "uid" => "pod-uid-123",
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123",
-            "devpod.sh/created" => "true"
-          }
+          "uid" => "pod-uid-123"
         }
       }
 
-      service = DevpodOpencodeOperator.Resources.build_service(pod, 4096)
+      service = DevpodOpencodeOperator.Resources.build_service(workspace)
 
       assert get_in(service, ["metadata", "name"]) == "abc123-opencode"
     end
 
     test "includes ownerReferences pointing at the Pod" do
-      pod = %{
-        "metadata" => %{
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
           "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "uid" => "pod-uid-123",
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123"
-          }
+          "uid" => "pod-uid-123"
         }
       }
 
-      service = DevpodOpencodeOperator.Resources.build_service(pod, 4096)
+      service = DevpodOpencodeOperator.Resources.build_service(workspace)
 
       owner_refs = get_in(service, ["metadata", "ownerReferences"])
       assert length(owner_refs) == 1
@@ -45,59 +59,50 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     end
 
     test "omits ownerReferences when Pod has no UID" do
-      pod = %{
-        "metadata" => %{
-          "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "uid" => nil,
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123"
-          }
-        }
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: nil
       }
 
-      service = DevpodOpencodeOperator.Resources.build_service(pod, 4096)
+      service = DevpodOpencodeOperator.Resources.build_service(workspace)
 
       assert get_in(service, ["metadata", "ownerReferences"]) == nil
     end
 
     test "omits ownerReferences when Pod metadata has no uid key" do
-      pod = %{
-        "metadata" => %{
-          "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123"
-          }
-        }
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: nil
       }
 
-      service = DevpodOpencodeOperator.Resources.build_service(pod, 4096)
+      service = DevpodOpencodeOperator.Resources.build_service(workspace)
 
       assert get_in(service, ["metadata", "ownerReferences"]) == nil
     end
   end
 
-  describe "build_http_route/4" do
+  describe "build_http_route/2" do
     test "returns an HTTPRoute with correct hostname, parentRef, and backendRef" do
-      pod = %{
-        "metadata" => %{
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
           "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "uid" => "pod-uid-123",
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123"
-          }
+          "uid" => "pod-uid-123"
         }
       }
 
-      http_route =
-        DevpodOpencodeOperator.Resources.build_http_route(
-          pod,
-          "devpod.mydomain.com",
-          "my-gateway",
-          "gateway-ns"
-        )
+      http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
 
       # Name and namespace
       assert get_in(http_route, ["metadata", "name"]) == "abc123-opencode"
@@ -132,24 +137,20 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     end
 
     test "includes ownerReferences pointing at the Pod" do
-      pod = %{
-        "metadata" => %{
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
           "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "uid" => "pod-uid-123",
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123"
-          }
+          "uid" => "pod-uid-123"
         }
       }
 
-      http_route =
-        DevpodOpencodeOperator.Resources.build_http_route(
-          pod,
-          "devpod.mydomain.com",
-          "my-gateway",
-          "gateway-ns"
-        )
+      http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
 
       owner_refs = get_in(http_route, ["metadata", "ownerReferences"])
       assert length(owner_refs) == 1
@@ -162,23 +163,15 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     end
 
     test "omits ownerReferences when Pod has no UID" do
-      pod = %{
-        "metadata" => %{
-          "name" => "devpod-abc123",
-          "namespace" => "devpod",
-          "labels" => %{
-            "devpod.sh/workspace-uid" => "abc123"
-          }
-        }
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: nil
       }
 
-      http_route =
-        DevpodOpencodeOperator.Resources.build_http_route(
-          pod,
-          "devpod.mydomain.com",
-          "my-gateway",
-          "gateway-ns"
-        )
+      http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
 
       assert get_in(http_route, ["metadata", "ownerReferences"]) == nil
     end
