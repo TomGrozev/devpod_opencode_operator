@@ -52,4 +52,28 @@ defmodule DevpodOpencodeOperator.Portal.TemplateTest do
       refute html =~ "No OpenCode Endpoints found."
     end
   end
+
+  describe "render/1 — header meta" do
+    test "shows 'No active sessions' when endpoints is empty" do
+      html = Template.render([])
+      assert html =~ "No active sessions"
+    end
+
+    test "shows '1 active session' (singular) when there is one endpoint" do
+      html = Template.render([%{url: "https://x.example.com", workspace_id: "x"}])
+      assert html =~ "1 active session"
+      refute html =~ "1 active sessions"
+    end
+
+    test "shows 'N active sessions' (plural) when there are multiple endpoints" do
+      html =
+        Template.render([
+          %{url: "https://a.example.com", workspace_id: "a"},
+          %{url: "https://b.example.com", workspace_id: "b"},
+          %{url: "https://c.example.com", workspace_id: "c"}
+        ])
+
+      assert html =~ "3 active sessions"
+    end
+  end
 end
