@@ -58,8 +58,8 @@ The chart is published as an OCI artifact. Install it with:
 
 ```bash
 helm install devpod-opencode-operator \
-  oci://ghcr.io/tomgrozev/devpod-opencode-operator \
-  --version 0.2.0 \
+  oci://ghcr.io/tomgrozev/devpod_opencode_operator/devpod-opencode-operator \
+  --version 0.2.1 \
   --namespace devpod-system \
   --create-namespace \
   --set operator.baseDomain=workspaces.example.com \

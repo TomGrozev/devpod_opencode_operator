@@ -52,28 +52,27 @@ jobs:
 
       - name: Push chart to OCI
         run: |
-          # Helm 4's `helm push` appends the chart's name (from Chart.yaml) to the URL path.
-          # The URL must be host + owner only — the chart-name segment is forbidden or it
-          # gets duplicated, producing an invalid OCI reference. Helm infers the chart name
-          # from the .tgz and the version from Chart.yaml.
+          # Push to a repo-scoped OCI path. The resulting GHCR package lives at
+          # /repos/<owner>/<repo>/packages/container/<chart-name> and is owned by
+          # this repository, so the workflow's GITHUB_TOKEN (with packages: write)
+          # can manage its visibility. Helm 4 appends the chart name from Chart.yaml
+          # to the URL path, so the final package reference is
+          # oci://ghcr.io/<owner>/<repo>/<chart-name>.
           # See: https://helm.sh/docs/topics/registries/
           CHART_TGZ=$(ls dist/*.tgz | head -n1)
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          echo "Pushing $CHART_TGZ to oci://ghcr.io/${OWNER}"
-          helm push "$CHART_TGZ" "oci://ghcr.io/${OWNER}"
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "Pushing $CHART_TGZ to oci://ghcr.io/${REPO_LOWER}"
+          helm push "$CHART_TGZ" "oci://ghcr.io/${REPO_LOWER}"
 
       - name: Make package public
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Helm chart packages end up under the 'container' package_type on ghcr.io.
-          # Visibility defaults to private; flip it to public so Flux OCIRepository can pull anonymously.
-          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          for CANDIDATE in \
-            "/users/${OWNER_LOWER}/packages/container/devpod-opencode-operator" \
-            "/orgs/${OWNER_LOWER}/packages/container/devpod-opencode-operator"; do
-            if gh api -X PATCH -H "Accept: application/vnd.github+json" "$CANDIDATE" -f visibility=public; then
-              echo "Set $CANDIDATE to public"
-              break
-            fi
-          done
+          # Visibility defaults to private; flip it to public so Flux OCIRepository
+          # can pull anonymously. Package is now repo-scoped (see "Push chart to OCI"
+          # step), so the API path is /repos/<owner>/<repo>/packages/container/...
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          gh api -X PATCH -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO_LOWER}/packages/container/devpod-opencode-operator" \
+            -f visibility=public
