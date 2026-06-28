@@ -5,11 +5,16 @@ defmodule DevpodOpencodeOperator.Resources do
 
   alias DevpodOpencodeOperator.Workspace
 
+  @managed_by_label "app.kubernetes.io/managed-by"
+  @managed_by_value "devpod-opencode-operator"
+  @workspace_uid_label "devpod.sh/workspace-uid"
+
   @spec build_service(Workspace.t()) :: map
   def build_service(%Workspace{} = workspace) do
     metadata = %{
       "name" => workspace.name,
-      "namespace" => workspace.namespace
+      "namespace" => workspace.namespace,
+      "labels" => %{@managed_by_label => @managed_by_value}
     }
 
     metadata = maybe_add_owner_reference(metadata, workspace.owner_reference)
@@ -21,7 +26,7 @@ defmodule DevpodOpencodeOperator.Resources do
       "spec" => %{
         "type" => "ClusterIP",
         "selector" => %{
-          "devpod.sh/workspace-uid" => workspace.id
+          @workspace_uid_label => workspace.id
         },
         "ports" => [
           %{
@@ -37,7 +42,11 @@ defmodule DevpodOpencodeOperator.Resources do
   def build_http_route(%Workspace{} = workspace, config) do
     metadata = %{
       "name" => workspace.name,
-      "namespace" => workspace.namespace
+      "namespace" => workspace.namespace,
+      "labels" => %{
+        @managed_by_label => @managed_by_value,
+        @workspace_uid_label => workspace.id
+      }
     }
 
     metadata = maybe_add_owner_reference(metadata, workspace.owner_reference)

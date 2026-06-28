@@ -49,22 +49,7 @@ defmodule DevpodOpencodeOperator.K8s.Production do
   def list_pods(conn, opts) do
     {api_version, kind_str} = resolve_api_version(:Pod)
     op = K8s.Client.list(api_version, kind_str, opts)
-
-    case K8s.Client.run(conn, op) do
-      {:ok, response} ->
-        items = Map.get(response, "items", [])
-
-        resource_version =
-          case response do
-            %{"metadata" => %{"resourceVersion" => rv}} when is_binary(rv) -> rv
-            _ -> derive_resource_version(items)
-          end
-
-        {:ok, %{items: items, resource_version: resource_version}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    K8s.Client.run(conn, op) |> parse_list_response()
   end
 
   @impl true
@@ -82,6 +67,16 @@ defmodule DevpodOpencodeOperator.K8s.Production do
     K8s.Client.stream(conn, op)
   end
 
+  @impl true
+  def list_http_routes(conn, namespace, label_selector) do
+    {api_version, kind_str} = resolve_api_version(:HTTPRoute)
+
+    op =
+      K8s.Client.list(api_version, kind_str, namespace: namespace, label_selector: label_selector)
+
+    K8s.Client.run(conn, op) |> parse_list_response()
+  end
+
   # -------------------------------------------------------------------
   # Private helpers
   # -------------------------------------------------------------------
@@ -96,6 +91,20 @@ defmodule DevpodOpencodeOperator.K8s.Production do
   defp resolve_api_version(kind) when is_binary(kind) do
     {"v1", kind}
   end
+
+  defp parse_list_response({:ok, response}) do
+    items = Map.get(response, "items", [])
+
+    resource_version =
+      case response do
+        %{"metadata" => %{"resourceVersion" => rv}} when is_binary(rv) -> rv
+        _ -> derive_resource_version(items)
+      end
+
+    {:ok, %{items: items, resource_version: resource_version}}
+  end
+
+  defp parse_list_response({:error, reason}), do: {:error, reason}
 
   defp derive_resource_version(items) do
     items

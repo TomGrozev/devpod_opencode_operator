@@ -39,6 +39,19 @@ defmodule DevpodOpencodeOperator.K8s do
   @callback watch_pods(conn, resource_version :: String.t() | nil, opts :: keyword) ::
               {:ok, Enumerable.t()} | {:error, term}
 
+  @doc """
+  List HTTPRoutes in a namespace matching a label selector.
+
+  The label selector is a Kubernetes-style string (e.g.
+  `"app.kubernetes.io/managed-by=devpod-opencode-operator"`).
+
+  Returns the same shape as `list_pods/2` (atom-keyed `:items` and
+  `:resource_version`), even though the portal ignores `resource_version`
+  — the symmetry keeps the behaviour contract uniform.
+  """
+  @callback list_http_routes(conn, namespace :: String.t(), label_selector :: String.t()) ::
+              {:ok, %{items: [map], resource_version: String.t() | nil}} | {:error, term}
+
   # -------------------------------------------------------------------
   # Facade — dispatches to the impl module configured in application env
   # -------------------------------------------------------------------
@@ -60,4 +73,9 @@ defmodule DevpodOpencodeOperator.K8s do
           {:ok, Enumerable.t()} | {:error, term}
   def watch_pods(conn, resource_version, opts),
     do: impl().watch_pods(conn, resource_version, opts)
+
+  @spec list_http_routes(K8s.Conn.t(), String.t(), String.t()) ::
+          {:ok, %{items: [map], resource_version: String.t() | nil}} | {:error, term}
+  def list_http_routes(conn, namespace, label_selector),
+    do: impl().list_http_routes(conn, namespace, label_selector)
 end

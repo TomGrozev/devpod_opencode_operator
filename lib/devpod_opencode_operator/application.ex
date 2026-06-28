@@ -6,6 +6,7 @@ defmodule DevpodOpencodeOperator.Application do
     1. Loads configuration from environment variables
     2. Establishes a supervised Kubernetes cluster connection
     3. Starts the pod watcher
+    4. Starts the Bandit HTTP listener serving the in-operator portal
   """
 
   use Application
@@ -20,7 +21,11 @@ defmodule DevpodOpencodeOperator.Application do
 
     children = [
       DevpodOpencodeOperator.K8s.Connection,
-      {DevpodOpencodeOperator.Watcher, config: config}
+      {DevpodOpencodeOperator.Watcher, config: config},
+      {Bandit,
+       plug: {DevpodOpencodeOperator.Portal, namespace: config.target_namespace},
+       scheme: :http,
+       port: config.portal_port}
     ]
 
     opts = [strategy: :one_for_one, name: DevpodOpencodeOperator.Supervisor]

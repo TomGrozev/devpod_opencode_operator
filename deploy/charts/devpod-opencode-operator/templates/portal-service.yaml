@@ -1,0 +1,18 @@
+{{- if .Values.portal.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "devpod-opencode-operator.fullname" . }}-portal
+  namespace: {{ include "devpod-opencode-operator.namespace" . }}
+  labels:
+    {{- include "devpod-opencode-operator.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "devpod-opencode-operator.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: portal
+      protocol: TCP
+{{- end }}

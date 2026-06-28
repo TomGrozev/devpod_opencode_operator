@@ -15,6 +15,10 @@ _Avoid_: workspace UID, workspace-uid (these are the label key, not the concept)
 **OpenCode**:
 An interactive coding agent running inside a devpod workspace, accessible over HTTP on a configurable port (default 4096).
 
+**OpenCode Endpoint**:
+The user-facing URL `https://<workspace_id>.<base_domain>` backed by an operator-owned HTTPRoute. Its existence is what makes a Workspace "available" from the portal's perspective. The portal discovers endpoints by listing HTTPRoutes labelled `app.kubernetes.io/managed-by: devpod-opencode-operator`.
+_Avoid_: workspace link, workspace URL, opencode URL
+
 **DevPod**:
 A Kubernetes Pod running a development workspace, identified by the label `devpod.sh/created=true`.
 

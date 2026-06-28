@@ -85,6 +85,26 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
 
       assert get_in(service, ["metadata", "ownerReferences"]) == nil
     end
+
+    test "includes app.kubernetes.io/managed-by label set to devpod-opencode-operator" do
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
+          "name" => "devpod-abc123",
+          "uid" => "pod-uid-123"
+        }
+      }
+
+      service = DevpodOpencodeOperator.Resources.build_service(workspace)
+
+      labels = get_in(service, ["metadata", "labels"])
+      assert labels == %{"app.kubernetes.io/managed-by" => "devpod-opencode-operator"}
+    end
   end
 
   describe "build_http_route/2" do
@@ -174,6 +194,45 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
       http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
 
       assert get_in(http_route, ["metadata", "ownerReferences"]) == nil
+    end
+
+    test "includes app.kubernetes.io/managed-by label set to devpod-opencode-operator" do
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
+          "name" => "devpod-abc123",
+          "uid" => "pod-uid-123"
+        }
+      }
+
+      http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
+
+      assert get_in(http_route, ["metadata", "labels", "app.kubernetes.io/managed-by"]) ==
+               "devpod-opencode-operator"
+    end
+
+    test "includes devpod.sh/workspace-uid label set to the workspace id" do
+      workspace = %Workspace{
+        id: "abc123",
+        name: "abc123-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: %{
+          "apiVersion" => "v1",
+          "kind" => "Pod",
+          "name" => "devpod-abc123",
+          "uid" => "pod-uid-123"
+        }
+      }
+
+      http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
+
+      assert get_in(http_route, ["metadata", "labels", "devpod.sh/workspace-uid"]) == "abc123"
     end
   end
 end

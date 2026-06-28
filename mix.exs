@@ -28,6 +28,8 @@ defmodule DevpodOpencodeOperator.MixProject do
     [
       {:jason, "~> 1.4"},
       {:k8s, "~> 2.8"},
+      {:plug, "~> 1.16"},
+      {:bandit, "~> 1.6"},
       {:mox, "~> 1.0", only: :test}
     ]
   end

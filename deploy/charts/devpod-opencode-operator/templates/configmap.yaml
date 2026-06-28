@@ -12,3 +12,4 @@ data:
   gateway-name: {{ .Values.operator.gatewayName | quote }}
   gateway-namespace: {{ .Values.operator.gatewayNamespace | quote }}
   workspace-label: {{ .Values.operator.workspaceLabel | quote }}
+  portal-port: {{ .Values.portal.port | quote }}

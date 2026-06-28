@@ -36,6 +36,9 @@ helm install devpod-opencode-operator ./deploy/charts/devpod-opencode-operator \
 | `serviceMonitor.additionalLabels` | `{}` | Extra labels for the ServiceMonitor. |
 | `metrics.enabled` | `true` | Expose a metrics Service. |
 | `metrics.port` | `8080` | Metrics port. |
+| `portal.enabled` | `false` | Expose the in-operator portal through the gateway. |
+| `portal.port` | `4000` | Port the portal listens on inside the operator pod. |
+| `portal.hostname` | `""` (apex) | Hostname for the portal's HTTPRoute. Empty falls back to `<operator.baseDomain>`. |
 | `operator.targetNamespace` | `"devpod"` | Namespace the operator watches. |
 | `operator.baseDomain` | `""` | Base domain for HTTPRoute hostnames. |
 | `operator.defaultPort` | `4096` | Default OpenCode port. |
@@ -53,6 +56,37 @@ helm install devpod-opencode-operator ./deploy/charts/devpod-opencode-operator \
 | `affinity` | `{}` | Affinity rules. |
 | `namespace` | `""` | Override deployment namespace. |
 
+## Portal
+
+The operator ships with a small in-operator HTTP portal that lists the
+OpenCode Endpoints currently reconciled by the operator. The portal is
+useful for human navigation — clicking a card opens the corresponding
+OpenCode instance in the browser.
+
+**The portal listener is always on inside the operator pod**, regardless
+of `portal.enabled`. You can always reach it with:
+
+```bash
+kubectl port-forward deploy/<release-name>-devpod-opencode-operator 4000:4000
+# then open http://localhost:4000
+```
+
+`portal.enabled` controls only whether the chart also creates a
+gateway-routable `Service` and `HTTPRoute` for the portal:
+
+- `enabled: false` (default) — listener on inside the pod, but not
+  reachable through the gateway. Use `kubectl port-forward` (RBAC-gated).
+- `enabled: true` — chart creates a `Service` and `HTTPRoute`. The
+  HTTPRoute is exposed through the same gateway as workspace routes,
+  so anyone who can reach the gateway can reach the portal.
+
+**Authentication.** The portal has no in-app authentication. Workspace
+IDs are not credentials, and the OpenCode Endpoints themselves are
+already reachable through the gateway at `<workspace_id>.<baseDomain>`.
+If your threat model requires it, apply authentication at the
+gateway/proxy layer (e.g. `AuthorizationPolicy`, OAuth2-proxy, mTLS).
+When `portal.enabled: true`, treat the portal hostname as semi-public.
+
 ## Uninstalling
 
 ```bash
@@ -66,3 +100,6 @@ helm uninstall devpod-opencode-operator --namespace devpod-system
    - A **ClusterIP Service** named `<workspace-id>-opencode` pointing at the OpenCode port.
    - An **HTTPRoute** named `<workspace-id>-opencode` with hostname `<workspace-id>.<baseDomain>`, referencing the configured Gateway.
 3. Both resources have an `ownerReference` back to the Pod, so Kubernetes garbage-collects them automatically when the Pod is deleted.
+4. The operator also runs a small HTTP portal (always on inside the pod;
+   optionally exposed through the gateway — see the [Portal](#portal)
+   section below).

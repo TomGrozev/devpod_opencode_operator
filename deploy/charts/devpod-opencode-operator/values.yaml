@@ -49,6 +49,21 @@ metrics:
   enabled: true
   port: 8080
 
+## In-operator portal — serves a page listing OpenCode Endpoints
+## discovered via the app.kubernetes.io/managed-by=devpod-opencode-operator
+## label on HTTPRoutes. The listener is always on in the operator pod
+## (kubectl port-forward works regardless of this toggle); this block
+## controls only the optional gateway exposure.
+portal:
+  ## Create a Service + HTTPRoute to expose the portal through the gateway.
+  ## Off by default; chart behavior is unchanged when upgrading.
+  enabled: false
+  ## Port the portal listens on inside the operator pod.
+  port: 4000
+  ## Hostname for the HTTPRoute. Empty (default) → bare apex
+  ## `<operator.baseDomain>`. Non-empty → exact value (e.g. "portal.example.org").
+  hostname: ""
+
 ## Pod-level labels and annotations.
 podLabels: {}
 podAnnotations: {}

@@ -61,12 +61,20 @@ spec:
                 configMapKeyRef:
                   name: {{ include "devpod-opencode-operator.fullname" . }}-config
                   key: gateway-namespace
+            - name: PORTAL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "devpod-opencode-operator.fullname" . }}-config
+                  key: portal-port
           ports:
             {{- if .Values.metrics.enabled }}
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
               protocol: TCP
             {{- end }}
+            - name: portal
+              containerPort: {{ .Values.portal.port }}
+              protocol: TCP
           livenessProbe:
             exec:
               command:

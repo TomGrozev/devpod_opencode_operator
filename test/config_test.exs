@@ -6,7 +6,8 @@ defmodule DevpodOpencodeOperator.ConfigTest do
     "GATEWAY_NAME" => "my-gateway",
     "GATEWAY_NAMESPACE" => "gateway-ns",
     "TARGET_NAMESPACE" => "custom-ns",
-    "DEFAULT_PORT" => "8080"
+    "DEFAULT_PORT" => "8080",
+    "PORTAL_PORT" => "4000"
   }
 
   setup do
@@ -87,6 +88,18 @@ defmodule DevpodOpencodeOperator.ConfigTest do
       error = assert_raise ArgumentError, fn -> DevpodOpencodeOperator.Config.load() end
       assert error.message =~ "DEFAULT_PORT"
       assert error.message =~ "between 1 and 65535"
+    end
+
+    test "uses default portal port 4000 when PORTAL_PORT is not set" do
+      System.delete_env("PORTAL_PORT")
+      config = DevpodOpencodeOperator.Config.load()
+      assert config.portal_port == 4000
+    end
+
+    test "parses PORTAL_PORT from env when set" do
+      System.put_env("PORTAL_PORT", "9090")
+      config = DevpodOpencodeOperator.Config.load()
+      assert config.portal_port == 9090
     end
   end
 end
