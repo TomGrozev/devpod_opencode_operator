@@ -7,7 +7,7 @@ name: Publish Helm Chart
 
 on:
   push:
-    tags: ['chart-v*']
+    tags: ["chart-v*"]
 
 permissions:
   contents: read
@@ -64,24 +64,3 @@ jobs:
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "Pushing $CHART_TGZ to oci://ghcr.io/${REPO_LOWER}"
           helm push "$CHART_TGZ" "oci://ghcr.io/${REPO_LOWER}"
-
-      - name: Make package public
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Helm chart packages end up under the 'container' package_type on ghcr.io.
-          # Visibility defaults to private; flip it to public so Flux OCIRepository
-          # can pull anonymously.
-          #
-          # GHCR quirk for personal accounts: even though we push to a repo-scoped
-          # OCI URL (oci://ghcr.io/<owner>/<repo>/<chart-name>), the resulting
-          # package is stored under the *user* account (not under the repo). The
-          # package's GHCR name is the full path-with-slash: "<repo>/<chart-name>",
-          # which appears URL-encoded as %2F in REST API paths. The repo-level
-          # REST endpoint (/repos/...) does not exist for personal accounts and
-          # 404s — we must use the user-level one with the slash encoded.
-          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          REPO_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' | cut -d/ -f2)
-          gh api -X PATCH -H "Accept: application/vnd.github+json" \
-            "/users/${OWNER_LOWER}/packages/container/${REPO_NAME_LOWER}%2Fdevpod-opencode-operator" \
-            -f visibility=public
