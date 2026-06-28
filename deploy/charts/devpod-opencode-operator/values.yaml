@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/TomGrozev/devpod-opencode-operator
+  repository: ghcr.io/tomgrozev/devpod_opencode_operator
   tag: ""
   pullPolicy: IfNotPresent
 

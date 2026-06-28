@@ -47,9 +47,11 @@ handler — see [ADR-0001](docs/adr/0001-owner-references-for-cleanup.md).
 - **Kubernetes** 1.24+ (uses [Gateway API](https://gateway-api.sigs.k8s.io/) CRDs)
 - **Helm** 3.10+ (for the chart)
 - The **Gateway API CRDs** installed in your cluster:
+
   ```bash
   kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
   ```
+
 - An existing **Gateway** resource the operator can reference as the route's `parentRef`.
 
 ## Installation
@@ -91,32 +93,32 @@ The operator is configured through environment variables (sourced from a
 ConfigMap in the chart) plus a few chart toggles. The three **required** values
 are the ones the operator cannot infer:
 
-| Env var | Helm value | Description |
-|---|---|---|
-| `BASE_DOMAIN` | `operator.baseDomain` | Base domain used in HTTPRoute hostnames (`<workspace-uid>.<baseDomain>`). |
-| `GATEWAY_NAME` | `operator.gatewayName` | Name of the Gateway resource the HTTPRoutes attach to. |
-| `GATEWAY_NAMESPACE` | `operator.gatewayNamespace` | Namespace of that Gateway. |
+| Env var             | Helm value                  | Description                                                               |
+| ------------------- | --------------------------- | ------------------------------------------------------------------------- |
+| `BASE_DOMAIN`       | `operator.baseDomain`       | Base domain used in HTTPRoute hostnames (`<workspace-uid>.<baseDomain>`). |
+| `GATEWAY_NAME`      | `operator.gatewayName`      | Name of the Gateway resource the HTTPRoutes attach to.                    |
+| `GATEWAY_NAMESPACE` | `operator.gatewayNamespace` | Namespace of that Gateway.                                                |
 
 Optional:
 
-| Env var | Helm value | Default | Description |
-|---|---|---|---|
-| `TARGET_NAMESPACE` | `operator.targetNamespace` | `devpod` | Namespace the operator watches for devpod Pods. |
-| `DEFAULT_PORT` | `operator.defaultPort` | `4096` | OpenCode port if a Pod has no per-instance override. |
-| `PORTAL_PORT` | `portal.port` | `4000` | Port the portal listener binds to inside the pod. |
-| — | `portal.enabled` | `false` | Create a Service + HTTPRoute to expose the portal through the gateway. |
-| — | `portal.hostname` | `<operator.baseDomain>` (apex) | Hostname for the portal's HTTPRoute. |
-| `KUBECONFIG` | — | (unset) | When unset, the operator uses the in-cluster service account. Set only for local development. |
+| Env var            | Helm value                 | Default                        | Description                                                                                   |
+| ------------------ | -------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `TARGET_NAMESPACE` | `operator.targetNamespace` | `devpod`                       | Namespace the operator watches for devpod Pods.                                               |
+| `DEFAULT_PORT`     | `operator.defaultPort`     | `4096`                         | OpenCode port if a Pod has no per-instance override.                                          |
+| `PORTAL_PORT`      | `portal.port`              | `4000`                         | Port the portal listener binds to inside the pod.                                             |
+| —                  | `portal.enabled`           | `false`                        | Create a Service + HTTPRoute to expose the portal through the gateway.                        |
+| —                  | `portal.hostname`          | `<operator.baseDomain>` (apex) | Hostname for the portal's HTTPRoute.                                                          |
+| `KUBECONFIG`       | —                          | (unset)                        | When unset, the operator uses the in-cluster service account. Set only for local development. |
 
 ## Pod contract
 
 The operator reads the following from each Pod:
 
-| Field | Required | Source | Purpose |
-|---|---|---|---|
-| `devpod.sh/workspace-uid` (label) | yes | Pod metadata | The devpod workspace UID. Used as the K8s resource name suffix and in the HTTPRoute hostname. |
-| `DEVPOD_WORKSPACE_ID` (env var on the devpod container) | no | container env | Friendly display name. Falls back to the UID if unset. Surfaced on the portal and on the `devpod.sh/workspace` label of generated resources. |
-| `devpod.sh/opencode-port` (annotation) | no | Pod annotations | Per-Pod OpenCode port. Falls back to `DEFAULT_PORT`. |
+| Field                                                   | Required | Source          | Purpose                                                                                                                                      |
+| ------------------------------------------------------- | -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devpod.sh/workspace-uid` (label)                       | yes      | Pod metadata    | The devpod workspace UID. Used as the K8s resource name suffix and in the HTTPRoute hostname.                                                |
+| `DEVPOD_WORKSPACE_ID` (env var on the devpod container) | no       | container env   | Friendly display name. Falls back to the UID if unset. Surfaced on the portal and on the `devpod.sh/workspace` label of generated resources. |
+| `devpod.sh/opencode-port` (annotation)                  | no       | Pod annotations | Per-Pod OpenCode port. Falls back to `DEFAULT_PORT`.                                                                                         |
 
 The `devpod.sh/workspace-uid` label and the `DEVPOD_WORKSPACE_ID` env var are
 both set by DevPod itself on the workspace Pod — you should not need to set
@@ -151,19 +153,19 @@ gateway/proxy layer (e.g. `AuthorizationPolicy`, OAuth2-proxy, mTLS).
 
 The operator is a single Elixir/OTP application with a small supervision tree:
 
-| Module | Role |
-|---|---|
-| `DevpodOpencodeOperator.Application` | Boots the supervision tree. |
-| `DevpodOpencodeOperator.Config` | Loads and validates runtime config from env vars. |
-| `DevpodOpencodeOperator.Watcher` | `GenServer` running the list-then-watch loop with exponential backoff. |
-| `DevpodOpencodeOperator.Reconciler` | Stateless — applies Service + HTTPRoute for one Pod. |
-| `DevpodOpencodeOperator.Workspace` | Domain struct derived from a Pod map. |
-| `DevpodOpencodeOperator.Resources` | Pure manifest builders for Service and HTTPRoute. |
-| `DevpodOpencodeOperator.K8s` | Behaviour — application boundary for the K8s API. |
-| `DevpodOpencodeOperator.K8s.Connection` | Supervised holder for a `K8s.Conn.t()`. |
-| `DevpodOpencodeOperator.K8s.Production` | Production impl using the `k8s` hex package. |
-| `DevpodOpencodeOperator.Portal` | `Plug` serving the in-operator portal page. |
-| `DevpodOpencodeOperator.Portal.Template` | EEx-compiled HTML for the portal. |
+| Module                                   | Role                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| `DevpodOpencodeOperator.Application`     | Boots the supervision tree.                                            |
+| `DevpodOpencodeOperator.Config`          | Loads and validates runtime config from env vars.                      |
+| `DevpodOpencodeOperator.Watcher`         | `GenServer` running the list-then-watch loop with exponential backoff. |
+| `DevpodOpencodeOperator.Reconciler`      | Stateless — applies Service + HTTPRoute for one Pod.                   |
+| `DevpodOpencodeOperator.Workspace`       | Domain struct derived from a Pod map.                                  |
+| `DevpodOpencodeOperator.Resources`       | Pure manifest builders for Service and HTTPRoute.                      |
+| `DevpodOpencodeOperator.K8s`             | Behaviour — application boundary for the K8s API.                      |
+| `DevpodOpencodeOperator.K8s.Connection`  | Supervised holder for a `K8s.Conn.t()`.                                |
+| `DevpodOpencodeOperator.K8s.Production`  | Production impl using the `k8s` hex package.                           |
+| `DevpodOpencodeOperator.Portal`          | `Plug` serving the in-operator portal page.                            |
+| `DevpodOpencodeOperator.Portal.Template` | EEx-compiled HTML for the portal.                                      |
 
 The control loop is the standard Kubernetes pattern: list to seed a
 `resourceVersion`, then watch for deltas; on a stream error or 410 Gone,
@@ -219,8 +221,8 @@ CI builds and publishes the image to GitHub Container Registry on tag pushes
 (see [`.github/workflows/publish-image.yml`](.github/workflows/publish-image.yml)):
 
 ```
-ghcr.io/tomgrozev/devpod-opencode-operator:0.2.0
-ghcr.io/tomgrozev/devpod-opencode-operator:latest
+ghcr.io/tomgrozev/devpod_opencode_operator:0.2.0
+ghcr.io/tomgrozev/devpod_opencode_operator:latest
 ```
 
 A multi-stage `Dockerfile` produces a non-root release image based on
@@ -232,10 +234,10 @@ The container image and the Helm chart are released independently. They share
 the same `origin/master` commit, but are triggered by different tag prefixes
 so that a chart-only change doesn't force an app release (and vice versa).
 
-| Tag prefix | What it publishes | Version source |
-|---|---|---|
-| `v*` (e.g. `v0.2.0`) | Container image (`ghcr.io/tomgrozev/devpod_opencode_operator:0.2.0`) | Git tag name, with leading `v` stripped |
-| `chart-v*` (e.g. `chart-v0.2.1`) | Helm chart (`oci://ghcr.io/tomgrozev/devpod_opencode_operator/devpod-opencode-operator:0.2.1`) | `Chart.yaml` `version` field |
+| Tag prefix                       | What it publishes                                                                              | Version source                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `v*` (e.g. `v0.2.0`)             | Container image (`ghcr.io/tomgrozev/devpod_opencode_operator:0.2.0`)                           | Git tag name, with leading `v` stripped |
+| `chart-v*` (e.g. `chart-v0.2.1`) | Helm chart (`oci://ghcr.io/tomgrozev/devpod_opencode_operator/devpod-opencode-operator:0.2.1`) | `Chart.yaml` `version` field            |
 
 Both workflows require the tag's commit to be reachable from `origin/master`.
 

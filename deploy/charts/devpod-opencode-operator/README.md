@@ -4,10 +4,10 @@ A Kubernetes operator that watches for [DevPod](https://devpod.sh) workspace Pod
 
 ## Prerequisites
 
-| Requirement | Version |
-|---|---|
-| Kubernetes | >= 1.24 |
-| Helm | >= 3.10 |
+| Requirement      | Version                  |
+| ---------------- | ------------------------ |
+| Kubernetes       | >= 1.24                  |
+| Helm             | >= 3.10                  |
 | Gateway API CRDs | installed on the cluster |
 
 ## Installing the Chart
@@ -23,38 +23,38 @@ helm install devpod-opencode-operator ./deploy/charts/devpod-opencode-operator \
 
 ## Configuration
 
-| Key | Default | Description |
-|---|---|---|
-| `replicaCount` | `1` | Number of operator replicas. |
-| `image.repository` | `ghcr.io/TomGrozev/devpod-opencode-operator` | Container image. |
-| `image.tag` | `""` (appVersion) | Image tag. |
-| `image.pullPolicy` | `IfNotPresent` | Image pull policy. |
-| `leaderElection.enabled` | `true` | Enable leader election for HA. |
-| `serviceAccount.create` | `true` | Create a ServiceAccount. |
-| `serviceAccount.name` | `""` | Override ServiceAccount name. |
-| `serviceMonitor.enabled` | `true` | Deploy a Prometheus ServiceMonitor. |
-| `serviceMonitor.additionalLabels` | `{}` | Extra labels for the ServiceMonitor. |
-| `metrics.enabled` | `true` | Expose a metrics Service. |
-| `metrics.port` | `8080` | Metrics port. |
-| `portal.enabled` | `false` | Expose the in-operator portal through the gateway. |
-| `portal.port` | `4000` | Port the portal listens on inside the operator pod. |
-| `portal.hostname` | `""` (apex) | Hostname for the portal's HTTPRoute. Empty falls back to `<operator.baseDomain>`. |
-| `operator.targetNamespace` | `"devpod"` | Namespace the operator watches. |
-| `operator.baseDomain` | `""` | Base domain for HTTPRoute hostnames. |
-| `operator.defaultPort` | `4096` | Default OpenCode port. |
-| `operator.gatewayName` | `""` | Gateway resource name for HTTPRoute parentRef. |
-| `operator.gatewayNamespace` | `""` | Gateway resource namespace. |
-| `operator.workspaceLabel` | `"devpod.sh/workspace-uid"` | Pod label selector. |
-| `resources.requests.cpu` | `100m` | CPU request. |
-| `resources.requests.memory` | `128Mi` | Memory request. |
-| `resources.limits.cpu` | `500m` | CPU limit. |
-| `resources.limits.memory` | `256Mi` | Memory limit. |
-| `podLabels` | `{}` | Extra pod labels. |
-| `podAnnotations` | `{}` | Extra pod annotations. |
-| `nodeSelector` | `{}` | Node selector. |
-| `tolerations` | `[]` | Tolerations. |
-| `affinity` | `{}` | Affinity rules. |
-| `namespace` | `""` | Override deployment namespace. |
+| Key                               | Default                                      | Description                                                                       |
+| --------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------- |
+| `replicaCount`                    | `1`                                          | Number of operator replicas.                                                      |
+| `image.repository`                | `ghcr.io/tomgrozev/devpod_opencode_operator` | Container image.                                                                  |
+| `image.tag`                       | `""` (appVersion)                            | Image tag.                                                                        |
+| `image.pullPolicy`                | `IfNotPresent`                               | Image pull policy.                                                                |
+| `leaderElection.enabled`          | `true`                                       | Enable leader election for HA.                                                    |
+| `serviceAccount.create`           | `true`                                       | Create a ServiceAccount.                                                          |
+| `serviceAccount.name`             | `""`                                         | Override ServiceAccount name.                                                     |
+| `serviceMonitor.enabled`          | `true`                                       | Deploy a Prometheus ServiceMonitor.                                               |
+| `serviceMonitor.additionalLabels` | `{}`                                         | Extra labels for the ServiceMonitor.                                              |
+| `metrics.enabled`                 | `true`                                       | Expose a metrics Service.                                                         |
+| `metrics.port`                    | `8080`                                       | Metrics port.                                                                     |
+| `portal.enabled`                  | `false`                                      | Expose the in-operator portal through the gateway.                                |
+| `portal.port`                     | `4000`                                       | Port the portal listens on inside the operator pod.                               |
+| `portal.hostname`                 | `""` (apex)                                  | Hostname for the portal's HTTPRoute. Empty falls back to `<operator.baseDomain>`. |
+| `operator.targetNamespace`        | `"devpod"`                                   | Namespace the operator watches.                                                   |
+| `operator.baseDomain`             | `""`                                         | Base domain for HTTPRoute hostnames.                                              |
+| `operator.defaultPort`            | `4096`                                       | Default OpenCode port.                                                            |
+| `operator.gatewayName`            | `""`                                         | Gateway resource name for HTTPRoute parentRef.                                    |
+| `operator.gatewayNamespace`       | `""`                                         | Gateway resource namespace.                                                       |
+| `operator.workspaceLabel`         | `"devpod.sh/workspace-uid"`                  | Pod label selector.                                                               |
+| `resources.requests.cpu`          | `100m`                                       | CPU request.                                                                      |
+| `resources.requests.memory`       | `128Mi`                                      | Memory request.                                                                   |
+| `resources.limits.cpu`            | `500m`                                       | CPU limit.                                                                        |
+| `resources.limits.memory`         | `256Mi`                                      | Memory limit.                                                                     |
+| `podLabels`                       | `{}`                                         | Extra pod labels.                                                                 |
+| `podAnnotations`                  | `{}`                                         | Extra pod annotations.                                                            |
+| `nodeSelector`                    | `{}`                                         | Node selector.                                                                    |
+| `tolerations`                     | `[]`                                         | Tolerations.                                                                      |
+| `affinity`                        | `{}`                                         | Affinity rules.                                                                   |
+| `namespace`                       | `""`                                         | Override deployment namespace.                                                    |
 
 ## Portal
 
