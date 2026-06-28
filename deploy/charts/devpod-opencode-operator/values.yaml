@@ -1,0 +1,86 @@
+## Number of operator replicas. Enable leaderElection for HA.
+replicaCount: 1
+
+image:
+  repository: ghcr.io/TomGrozev/devpod-opencode-operator
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+## Leader election for high-availability deployments.
+leaderElection:
+  enabled: true
+
+serviceAccount:
+  ## Create a service account for the operator.
+  create: true
+  ## Annotations to add to the service account.
+  annotations: {}
+  ## Name override; defaults to fullname.
+  name: ""
+
+## Operator configuration exposed via ConfigMap.
+operator:
+  ## Namespace the operator watches for devpod Pods.
+  targetNamespace: "devpod"
+  ## Base domain used in HTTPRoute hostnames (<workspace_id>.<baseDomain>).
+  baseDomain: ""
+  ## Default OpenCode port if the Pod annotation is missing.
+  defaultPort: 4096
+  ## Gateway resource referenced by HTTPRoute parentRefs.
+  gatewayName: ""
+  gatewayNamespace: ""
+  ## Label selector used to discover devpod Pods.
+  workspaceLabel: "devpod.sh/workspace-uid"
+
+## Prometheus ServiceMonitor.
+serviceMonitor:
+  enabled: true
+  ## Additional labels for the ServiceMonitor (e.g. release: kube-prometheus-stack).
+  additionalLabels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+
+## Metrics service (ClusterIP) exposing the operator's Prometheus endpoint.
+metrics:
+  enabled: true
+  port: 8080
+
+## Pod-level labels and annotations.
+podLabels: {}
+podAnnotations: {}
+
+## Pod security context.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+## Container security context.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+## Resource requests and limits.
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+## Node selector, tolerations, affinity.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+## Override the namespace the chart is deployed into.
+namespace: ""

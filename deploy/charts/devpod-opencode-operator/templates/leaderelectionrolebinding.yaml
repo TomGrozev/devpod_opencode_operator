@@ -1,0 +1,17 @@
+{{- if .Values.leaderElection.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "devpod-opencode-operator.fullname" . }}-leader-election
+  namespace: {{ include "devpod-opencode-operator.namespace" . }}
+  labels:
+    {{- include "devpod-opencode-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "devpod-opencode-operator.fullname" . }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "devpod-opencode-operator.serviceAccountName" . }}
+    namespace: {{ include "devpod-opencode-operator.namespace" . }}
+{{- end }}

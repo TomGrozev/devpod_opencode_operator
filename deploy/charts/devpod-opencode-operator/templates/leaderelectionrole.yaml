@@ -1,0 +1,22 @@
+{{- if .Values.leaderElection.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "devpod-opencode-operator.fullname" . }}-leader-election
+  namespace: {{ include "devpod-opencode-operator.namespace" . }}
+  labels:
+    {{- include "devpod-opencode-operator.labels" . | nindent 4 }}
+rules:
+  # Leases — used for leader election coordination.
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # ConfigMaps — leader election status is sometimes stored here.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Events — emitted during leader election transitions.
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+{{- end }}

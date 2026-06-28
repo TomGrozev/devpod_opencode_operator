@@ -1,0 +1,23 @@
+1. The {{ include "devpod-opencode-operator.fullname" . }} operator has been deployed.
+
+   Namespace : {{ include "devpod-opencode-operator.namespace" . }}
+   Replicas  : {{ .Values.replicaCount }}
+
+2. The operator watches for Pods with label
+   "{{ .Values.operator.workspaceLabel }}" in namespace
+   "{{ .Values.operator.targetNamespace }}" and creates a Service + HTTPRoute
+   for each devpod workspace.
+
+3. Verify the operator is running:
+
+   kubectl -n {{ include "devpod-opencode-operator.namespace" . }} get pods -l '{{ include "devpod-opencode-operator.selectorLabels" . | replace ": " "=" | replace "\n" "," }}'
+
+4. View operator logs:
+
+   kubectl -n {{ include "devpod-opencode-operator.namespace" . }} logs -l '{{ include "devpod-opencode-operator.selectorLabels" . | replace ": " "=" | replace "\n" "," }}' -f
+
+{{- if .Values.serviceMonitor.enabled }}
+
+5. Prometheus ServiceMonitor is enabled. Ensure the Prometheus Operator
+   is installed and configured to discover ServiceMonitors in this namespace.
+{{- end }}

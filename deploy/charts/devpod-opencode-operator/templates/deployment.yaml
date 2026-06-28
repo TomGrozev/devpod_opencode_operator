@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "devpod-opencode-operator.fullname" . }}
+  namespace: {{ include "devpod-opencode-operator.namespace" . }}
+  labels:
+    {{- include "devpod-opencode-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "devpod-opencode-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "devpod-opencode-operator.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "devpod-opencode-operator.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: BASE_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "devpod-opencode-operator.fullname" . }}-config
+                  key: base-domain
+            - name: TARGET_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "devpod-opencode-operator.fullname" . }}-config
+                  key: target-namespace
+            - name: DEFAULT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "devpod-opencode-operator.fullname" . }}-config
+                  key: default-port
+            - name: GATEWAY_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "devpod-opencode-operator.fullname" . }}-config
+                  key: gateway-name
+            - name: GATEWAY_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "devpod-opencode-operator.fullname" . }}-config
+                  key: gateway-namespace
+          ports:
+            {{- if .Values.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - /app/bin/devpod_opencode_operator
+                - pid
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /app/bin/devpod_opencode_operator
+                - pid
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

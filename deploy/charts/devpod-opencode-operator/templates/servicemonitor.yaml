@@ -1,0 +1,23 @@
+{{- if and .Values.serviceMonitor.enabled .Values.metrics.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "devpod-opencode-operator.fullname" . }}
+  namespace: {{ include "devpod-opencode-operator.namespace" . }}
+  labels:
+    {{- include "devpod-opencode-operator.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "devpod-opencode-operator.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "devpod-opencode-operator.namespace" . }}
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+{{- end }}

@@ -1,0 +1,16 @@
+apiVersion: v2
+name: devpod-opencode-operator
+description: A Kubernetes operator that watches for devpod Pods and exposes OpenCode instances via Service + HTTPRoute
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - devpod
+  - opencode
+  - operator
+  - kubernetes
+  - gateway
+home: https://github.com/TomGrozev/devpod_opencode_operator
+maintainers:
+  - name: Tom Grozev
+    email: 1491414+TomGrozev@users.noreply.github.com

@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "devpod-opencode-operator.fullname" . }}
+  labels:
+    {{- include "devpod-opencode-operator.labels" . | nindent 4 }}
+rules:
+  # Pods — the operator watches devpod Pods.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # Services — the operator creates a ClusterIP Service per workspace.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # HTTPRoutes — the operator creates an HTTPRoute per workspace.
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Events — the operator emits events for observability.
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # ConfigMaps — read the operator's own configuration.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]

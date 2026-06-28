@@ -1,0 +1,73 @@
+# Publishes the Helm chart to GitHub Container Registry (ghcr.io) as an OCI artifact on tag pushes.
+# Only runs when the pushed tag points to a commit reachable from origin/master.
+# The published OCI tag is the chart's `version` field from Chart.yaml.
+
+name: Publish Helm Chart
+
+on:
+  push:
+    tags: ['*']
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-chart-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-and-push:
+    name: Package & Push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check tag points to master
+        run: |
+          git fetch origin master
+          TAG_SHA=$(git rev-parse "$GITHUB_SHA")
+          if ! git merge-base --is-ancestor "$TAG_SHA" origin/master; then
+            echo "Tag commit $TAG_SHA is not reachable from origin/master — skipping."
+            exit 0
+          fi
+          echo "Tag commit is on master — proceeding."
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v4.2.0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package chart
+        run: |
+          helm package deploy/charts/devpod-opencode-operator --destination dist
+
+      - name: Push chart to OCI
+        run: |
+          CHART_TGZ=$(ls dist/*.tgz | head -n1)
+          echo "Pushing $CHART_TGZ"
+          helm push "$CHART_TGZ" oci://ghcr.io/${{ github.repository_owner }}/devpod-opencode-operator
+
+      - name: Make package public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Helm chart packages end up under the 'container' package_type on ghcr.io.
+          # Visibility defaults to private; flip it to public so Flux OCIRepository can pull anonymously.
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          for CANDIDATE in \
+            "/users/${OWNER_LOWER}/packages/container/devpod-opencode-operator" \
+            "/orgs/${OWNER_LOWER}/packages/container/devpod-opencode-operator"; do
+            if gh api -X PATCH -H "Accept: application/vnd.github+json" "$CANDIDATE" -f visibility=public; then
+              echo "Set $CANDIDATE to public"
+              break
+            fi
+          done
