@@ -228,17 +228,37 @@ A multi-stage `Dockerfile` produces a non-root release image based on
 
 ## Releasing
 
-Push a tag reachable from `origin/master` to publish both the container image
-and the Helm chart (as an OCI artifact) in one step:
+The container image and the Helm chart are released independently. They share
+the same `origin/master` commit, but are triggered by different tag prefixes
+so that a chart-only change doesn't force an app release (and vice versa).
+
+| Tag prefix | What it publishes | Version source |
+|---|---|---|
+| `v*` (e.g. `v0.2.0`) | Container image (`ghcr.io/tomgrozev/devpod_opencode_operator:0.2.0`) | Git tag name, with leading `v` stripped |
+| `chart-v*` (e.g. `chart-v0.2.1`) | Helm chart (`oci://ghcr.io/tomgrozev/devpod_opencode_operator/devpod-opencode-operator:0.2.1`) | `Chart.yaml` `version` field |
+
+Both workflows require the tag's commit to be reachable from `origin/master`.
+
+Examples:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+# App release only
+git tag v0.2.0
+git push origin v0.2.0
+
+# Chart release only — no app change required
+git tag chart-v0.2.1
+git push origin chart-v0.2.1
+
+# Both at once (push two tags in one command)
+git tag v0.2.0 chart-v0.2.1
+git push origin v0.2.0 chart-v0.2.1
 ```
 
-Update `mix.exs` `version` and
-`deploy/charts/devpod-opencode-operator/Chart.yaml` `version` / `appVersion`
-in the same commit. The chart version follows [SemVer](https://semver.org/).
+For a new app release, update `mix.exs` `version`. For a new chart release,
+update `deploy/charts/devpod-opencode-operator/Chart.yaml` `version` (and
+`appVersion` if the app itself is being released). The chart version follows
+[SemVer](https://semver.org/).
 
 ## Documentation
 

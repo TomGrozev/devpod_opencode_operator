@@ -1,12 +1,14 @@
-# Publishes the Docker image to GitHub Container Registry (ghcr.io) on tag pushes.
-# Only runs when the pushed tag points to a commit reachable from origin/master.
-# Builds linux/amd64 only; add arm64 to the platforms list if needed.
+# Publishes the Docker image to GitHub Container Registry (ghcr.io) on tag pushes
+# matching `v*`. Only runs when the pushed tag points to a commit reachable from
+# origin/master. The image tag is the git tag with the leading `v` stripped
+# (e.g. tag `v0.2.0` → image tag `0.2.0`). Builds linux/amd64 only; add arm64
+# to the platforms list if needed.
 
 name: Publish Docker Image
 
 on:
   push:
-    tags: ['*']
+    tags: ['v*']
 
 permissions:
   contents: read
@@ -51,7 +53,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/tomgrozev/devpod_opencode_operator:${{ github.ref_name }}
+            ghcr.io/tomgrozev/devpod_opencode_operator:${{ github.ref_name | replace('v', '') }}
             ghcr.io/tomgrozev/devpod_opencode_operator:latest
             ghcr.io/tomgrozev/devpod_opencode_operator:sha-${{ github.sha }}
           cache-from: type=gha

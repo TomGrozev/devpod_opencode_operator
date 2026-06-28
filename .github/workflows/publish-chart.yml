@@ -1,12 +1,13 @@
-# Publishes the Helm chart to GitHub Container Registry (ghcr.io) as an OCI artifact on tag pushes.
-# Only runs when the pushed tag points to a commit reachable from origin/master.
-# The published OCI tag is the chart's `version` field from Chart.yaml.
+# Publishes the Helm chart to GitHub Container Registry (ghcr.io) as an OCI artifact
+# on tag pushes matching `chart-v*`. Only runs when the pushed tag points to a
+# commit reachable from origin/master. The published OCI tag is the chart's
+# `version` field from Chart.yaml (e.g. tag `chart-v0.2.1` → OCI tag `0.2.1`).
 
 name: Publish Helm Chart
 
 on:
   push:
-    tags: ["*"]
+    tags: ['chart-v*']
 
 permissions:
   contents: read
