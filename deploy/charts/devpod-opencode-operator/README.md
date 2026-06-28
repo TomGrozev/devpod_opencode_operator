@@ -26,7 +26,7 @@ helm install devpod-opencode-operator ./deploy/charts/devpod-opencode-operator \
 | Key | Default | Description |
 |---|---|---|
 | `replicaCount` | `1` | Number of operator replicas. |
-| `image.repository` | `ghcr.io/example/devpod-opencode-operator` | Container image. |
+| `image.repository` | `ghcr.io/TomGrozev/devpod-opencode-operator` | Container image. |
 | `image.tag` | `""` (appVersion) | Image tag. |
 | `image.pullPolicy` | `IfNotPresent` | Image pull policy. |
 | `leaderElection.enabled` | `true` | Enable leader election for HA. |
@@ -97,9 +97,15 @@ helm uninstall devpod-opencode-operator --namespace devpod-system
 
 1. The operator lists all Pods in the configured `targetNamespace` that carry the `devpod.sh/workspace-uid` label.
 2. For each matching Pod it creates:
-   - A **ClusterIP Service** named `<workspace-id>-opencode` pointing at the OpenCode port.
-   - An **HTTPRoute** named `<workspace-id>-opencode` with hostname `<workspace-id>.<baseDomain>`, referencing the configured Gateway.
+   - A **ClusterIP Service** named `<workspace-uid>-opencode` pointing at the OpenCode port.
+   - An **HTTPRoute** named `<workspace-uid>-opencode` with hostname `<workspace-uid>.<baseDomain>`, referencing the configured Gateway.
 3. Both resources have an `ownerReference` back to the Pod, so Kubernetes garbage-collects them automatically when the Pod is deleted.
 4. The operator also runs a small HTTP portal (always on inside the pod;
    optionally exposed through the gateway — see the [Portal](#portal)
    section below).
+
+## See also
+
+- [Main README](../../../README.md) — project overview, installation, and architecture
+- [CONTEXT.md](../../../CONTEXT.md) — domain vocabulary (workspace, OpenCode endpoint, etc.)
+- [ADR-0005: Portal has no in-app authentication](../../../docs/adr/0005-portal-no-in-app-auth.md) — auth expectations for the portal
