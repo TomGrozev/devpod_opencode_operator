@@ -16,6 +16,7 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     test "returns a Service with name <workspace_id>-opencode" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -32,9 +33,31 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
       assert get_in(service, ["metadata", "name"]) == "abc123-opencode"
     end
 
-    test "includes ownerReferences pointing at the Pod" do
+    test "uses uid for name and selector, friendly id for label when id differs from uid" do
+      workspace = %Workspace{
+        id: "my-project",
+        uid: "default-po-3e6db",
+        name: "default-po-3e6db-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: nil
+      }
+
+      service = DevpodOpencodeOperator.Resources.build_service(workspace)
+
+      assert get_in(service, ["metadata", "name"]) == "default-po-3e6db-opencode"
+
+      assert get_in(service, ["spec", "selector"]) == %{
+               "devpod.sh/workspace-uid" => "default-po-3e6db"
+             }
+
+      assert get_in(service, ["metadata", "labels", "devpod.sh/workspace"]) == "my-project"
+    end
+
+    test "includes ownerReferences when owner_reference is set" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -48,19 +71,20 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
 
       service = DevpodOpencodeOperator.Resources.build_service(workspace)
 
-      owner_refs = get_in(service, ["metadata", "ownerReferences"])
-      assert length(owner_refs) == 1
-
-      owner = hd(owner_refs)
-      assert owner["apiVersion"] == "v1"
-      assert owner["kind"] == "Pod"
-      assert owner["name"] == "devpod-abc123"
-      assert owner["uid"] == "pod-uid-123"
+      assert get_in(service, ["metadata", "ownerReferences"]) == [
+               %{
+                 "apiVersion" => "v1",
+                 "kind" => "Pod",
+                 "name" => "devpod-abc123",
+                 "uid" => "pod-uid-123"
+               }
+             ]
     end
 
     test "omits ownerReferences when Pod has no UID" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -75,6 +99,7 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     test "omits ownerReferences when Pod metadata has no uid key" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -89,6 +114,7 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     test "includes app.kubernetes.io/managed-by label set to devpod-opencode-operator" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -103,7 +129,8 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
       service = DevpodOpencodeOperator.Resources.build_service(workspace)
 
       labels = get_in(service, ["metadata", "labels"])
-      assert labels == %{"app.kubernetes.io/managed-by" => "devpod-opencode-operator"}
+      assert labels["app.kubernetes.io/managed-by"] == "devpod-opencode-operator"
+      assert labels["devpod.sh/workspace"] == "abc123"
     end
   end
 
@@ -111,6 +138,7 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     test "returns an HTTPRoute with correct hostname, parentRef, and backendRef" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -156,9 +184,31 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
       assert hd(backend_refs)["port"] == 80
     end
 
-    test "includes ownerReferences pointing at the Pod" do
+    test "uses uid for name and hostname, friendly id for label when id differs from uid" do
+      workspace = %Workspace{
+        id: "my-project",
+        uid: "default-po-3e6db",
+        name: "default-po-3e6db-opencode",
+        namespace: "devpod",
+        port: 4096,
+        owner_reference: nil
+      }
+
+      http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
+
+      assert get_in(http_route, ["metadata", "name"]) == "default-po-3e6db-opencode"
+      assert get_in(http_route, ["spec", "hostnames"]) == ["default-po-3e6db.devpod.mydomain.com"]
+
+      assert get_in(http_route, ["metadata", "labels", "devpod.sh/workspace-uid"]) ==
+               "default-po-3e6db"
+
+      assert get_in(http_route, ["metadata", "labels", "devpod.sh/workspace"]) == "my-project"
+    end
+
+    test "includes ownerReferences when owner_reference is set" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -172,19 +222,20 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
 
       http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
 
-      owner_refs = get_in(http_route, ["metadata", "ownerReferences"])
-      assert length(owner_refs) == 1
-
-      owner = hd(owner_refs)
-      assert owner["apiVersion"] == "v1"
-      assert owner["kind"] == "Pod"
-      assert owner["name"] == "devpod-abc123"
-      assert owner["uid"] == "pod-uid-123"
+      assert get_in(http_route, ["metadata", "ownerReferences"]) == [
+               %{
+                 "apiVersion" => "v1",
+                 "kind" => "Pod",
+                 "name" => "devpod-abc123",
+                 "uid" => "pod-uid-123"
+               }
+             ]
     end
 
     test "omits ownerReferences when Pod has no UID" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -199,6 +250,7 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
     test "includes app.kubernetes.io/managed-by label set to devpod-opencode-operator" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -216,9 +268,10 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
                "devpod-opencode-operator"
     end
 
-    test "includes devpod.sh/workspace-uid label set to the workspace id" do
+    test "includes devpod.sh/workspace-uid label set to the workspace uid" do
       workspace = %Workspace{
         id: "abc123",
+        uid: "abc123",
         name: "abc123-opencode",
         namespace: "devpod",
         port: 4096,
@@ -233,6 +286,7 @@ defmodule DevpodOpencodeOperator.ResourcesTest do
       http_route = DevpodOpencodeOperator.Resources.build_http_route(workspace, @config)
 
       assert get_in(http_route, ["metadata", "labels", "devpod.sh/workspace-uid"]) == "abc123"
+      assert get_in(http_route, ["metadata", "labels", "devpod.sh/workspace"]) == "abc123"
     end
   end
 end

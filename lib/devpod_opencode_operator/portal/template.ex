@@ -2,9 +2,11 @@ defmodule DevpodOpencodeOperator.Portal.Template do
   @moduledoc """
   Renders the portal HTML for a list of OpenCode Endpoints.
 
-  Each endpoint is a map with `:url` (the user-facing URL) and
-  `:workspace_id` (the display text). The template is compiled once
-  at compile time via `EEx.function_from_string/5`.
+  Each endpoint is a map with `:url` (the user-facing URL),
+  `:workspace_id` (the friendly display name), and optionally
+  `:workspace_uid` (a subline showing the underlying devpod UID).
+  The template is compiled once at compile time via
+  `EEx.function_from_string/5`.
 
   Theme: Nord Polar Night base + Frost cyan accents, with a small
   "traffic light" decoration on each card (the signature element —
@@ -108,6 +110,15 @@ defmodule DevpodOpencodeOperator.Portal.Template do
           color: var(--fg);
           word-break: break-all;
         }
+        .card .uid {
+          display: block;
+          font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", "Fira Code", Menlo, monospace;
+          font-size: 0.75rem;
+          color: var(--fg-dim);
+          margin-top: 0.25rem;
+          word-break: break-all;
+          letter-spacing: 0.01em;
+        }
         .empty {
           color: var(--fg-dim);
           font-style: italic;
@@ -148,6 +159,9 @@ defmodule DevpodOpencodeOperator.Portal.Template do
               <span class="g"></span>
             </span>
             <span class="id"><%= endpoint.workspace_id %></span>
+            <%= if workspace_uid = Map.get(endpoint, :workspace_uid) do %>
+              <span class="uid"><%= workspace_uid %></span>
+            <% end %>
           </a>
         <% end %>
         <%= if endpoints == [] do %>

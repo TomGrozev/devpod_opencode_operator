@@ -19,6 +19,7 @@ defmodule DevpodOpencodeOperator.Portal do
 
   @label_selector "app.kubernetes.io/managed-by=devpod-opencode-operator"
   @workspace_uid_label "devpod.sh/workspace-uid"
+  @workspace_label "devpod.sh/workspace"
 
   @impl Plug
   def init(opts), do: opts
@@ -58,11 +59,19 @@ defmodule DevpodOpencodeOperator.Portal do
   end
 
   defp build_endpoint(route) do
-    workspace_id = get_in(route, ["metadata", "labels", @workspace_uid_label])
+    labels = get_in(route, ["metadata", "labels"]) || %{}
+    friendly_id = Map.get(labels, @workspace_label)
+    uid = Map.get(labels, @workspace_uid_label)
     hostname = route |> get_in(["spec", "hostnames"]) |> List.first()
 
-    if workspace_id && hostname do
-      %{url: "https://" <> hostname, workspace_id: workspace_id}
+    if uid && hostname do
+      workspace_uid = if friendly_id && friendly_id != uid, do: uid
+
+      %{
+        url: "https://" <> hostname,
+        workspace_id: friendly_id || uid,
+        workspace_uid: workspace_uid
+      }
     end
   end
 end

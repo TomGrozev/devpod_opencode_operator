@@ -35,7 +35,10 @@ defmodule DevpodOpencodeOperator.Reconciler do
 
     with {:ok, _service} <- Cluster.apply(conn, :Service, workspace.name, service),
          {:ok, _route} <- Cluster.apply(conn, :HTTPRoute, workspace.name, http_route) do
-      Logger.info("Reconciled workspace", workspace_id: workspace.id)
+      Logger.info("Reconciled workspace",
+        workspace_id: workspace.id,
+        workspace_uid: workspace.uid
+      )
 
       :ok
     else
