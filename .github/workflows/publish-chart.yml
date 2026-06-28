@@ -6,7 +6,7 @@ name: Publish Helm Chart
 
 on:
   push:
-    tags: ['*']
+    tags: ["*"]
 
 permissions:
   contents: read
@@ -52,9 +52,15 @@ jobs:
 
       - name: Push chart to OCI
         run: |
+          # Helm 4's `helm push` appends the chart's name (from Chart.yaml) to the URL path.
+          # The URL must be host + owner only — the chart-name segment is forbidden or it
+          # gets duplicated, producing an invalid OCI reference. Helm infers the chart name
+          # from the .tgz and the version from Chart.yaml.
+          # See: https://helm.sh/docs/topics/registries/
           CHART_TGZ=$(ls dist/*.tgz | head -n1)
-          echo "Pushing $CHART_TGZ"
-          helm push "$CHART_TGZ" oci://ghcr.io/${{ github.repository_owner }}/devpod-opencode-operator
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "Pushing $CHART_TGZ to oci://ghcr.io/${OWNER}"
+          helm push "$CHART_TGZ" "oci://ghcr.io/${OWNER}"
 
       - name: Make package public
         env:
