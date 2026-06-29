@@ -149,41 +149,6 @@ reachable through the gateway at per-workspace hostnames, so the portal adds
 no new secret surface. If your threat model requires it, apply auth at the
 gateway/proxy layer (e.g. `AuthorizationPolicy`, OAuth2-proxy, mTLS).
 
-## Architecture
-
-The operator is a single Elixir/OTP application with a small supervision tree:
-
-| Module                                   | Role                                                                   |
-| ---------------------------------------- | ---------------------------------------------------------------------- |
-| `DevpodOpencodeOperator.Application`     | Boots the supervision tree.                                            |
-| `DevpodOpencodeOperator.Config`          | Loads and validates runtime config from env vars.                      |
-| `DevpodOpencodeOperator.Watcher`         | `GenServer` running the list-then-watch loop with exponential backoff. |
-| `DevpodOpencodeOperator.Reconciler`      | Stateless — applies Service + HTTPRoute for one Pod.                   |
-| `DevpodOpencodeOperator.Workspace`       | Domain struct derived from a Pod map.                                  |
-| `DevpodOpencodeOperator.Resources`       | Pure manifest builders for Service and HTTPRoute.                      |
-| `DevpodOpencodeOperator.K8s`             | Behaviour — application boundary for the K8s API.                      |
-| `DevpodOpencodeOperator.K8s.Connection`  | Supervised holder for a `K8s.Conn.t()`.                                |
-| `DevpodOpencodeOperator.K8s.Production`  | Production impl using the `k8s` hex package.                           |
-| `DevpodOpencodeOperator.Portal`          | `Plug` serving the in-operator portal page.                            |
-| `DevpodOpencodeOperator.Portal.Template` | EEx-compiled HTML for the portal.                                      |
-
-The control loop is the standard Kubernetes pattern: list to seed a
-`resourceVersion`, then watch for deltas; on a stream error or 410 Gone,
-re-list and re-watch. Server-side apply is idempotent by `(name, namespace)`.
-Owner references mean there is no explicit delete path — see
-[ADR-0001](docs/adr/0001-owner-references-for-cleanup.md).
-
-For design decisions and the alternatives considered:
-
-- [ADR-0001](docs/adr/0001-owner-references-for-cleanup.md) — owner references for cleanup
-- [ADR-0002](docs/adr/0002-skip-bonny-use-k8s-directly.md) — use `k8s` directly, skip Bonny
-- [ADR-0003](docs/adr/0003-portal-in-operator-plug-bandit.md) — in-operator portal via Plug + Bandit
-- [ADR-0004](docs/adr/0004-portal-reads-labelled-httproutes.md) — portal reads labelled HTTPRoutes
-- [ADR-0005](docs/adr/0005-portal-no-in-app-auth.md) — no in-app auth on the portal
-
-Domain vocabulary (the words used in the codebase and in issues) is defined
-in [`CONTEXT.md`](CONTEXT.md).
-
 ## Development
 
 Requires Elixir 1.19 and OTP 28.
